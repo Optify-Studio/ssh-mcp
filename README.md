@@ -3,56 +3,74 @@
 Add SSH servers, give each one multiple site folders. Every site appears in the `/` menu.
 Pick one, then ask anything: Claude works only on that server and folder.
 
-## Setup
+---
 
+## ⚡ Quick Start (Go Binary)
+
+Single, ultra-fast compiled binary with **native passkey / Touch ID / macOS Keychain / 1Password / SSH Agent** support. Zero Python runtime or virtual environment required!
+
+### 1. Build
 ```bash
-cd ssh-sites-mcp
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp sites.example.json sites.json                     # edit with your servers + site paths
+# Fetch dependencies and compile
+go mod tidy
+go build -ldflags="-s -w" -o ssh-sites main.go
 ```
 
-Add each server's host key once so connections are verified:
-`ssh-keyscan -H your.server.ip >> ~/.ssh/known_hosts`
-(or set `"trust_new_host": true` on that server to skip this).
+To cross-compile for all platforms:
+```bash
+make build-all
+# Binaries are saved to dist/:
+# - ssh-sites-darwin-arm64 (Apple Silicon M1/M2/M3/M4)
+# - ssh-sites-darwin-amd64 (Intel Mac)
+# - ssh-sites-linux-amd64 (Linux x86_64)
+# - ssh-sites-linux-arm64 (Linux ARM64)
+# - ssh-sites-windows-amd64.exe (Windows x86_64)
+```
 
-## Connect to Claude
+### 2. Configure `sites.json`
+```bash
+cp sites.example.json sites.json
+```
+
+### 3. Connect to Claude
 
 **Claude Desktop** (`claude_desktop_config.json`):
-
 ```json
 {
   "mcpServers": {
     "ssh-sites": {
-      "command": "/full/path/to/.venv/bin/python",
-      "args": ["/full/path/to/server.py"],
-      "env": { "SSH_SITES_CONFIG": "/full/path/to/sites.json" }
+      "command": "/full/path/to/ssh-sites",
+      "env": {
+        "SSH_SITES_CONFIG": "/full/path/to/sites.json"
+      }
     }
   }
 }
 ```
 
 **Claude Code:**
-
 ```bash
-claude mcp add ssh-sites -e SSH_SITES_CONFIG=/full/path/sites.json -- /full/path/.venv/bin/python /full/path/server.py
+claude mcp add ssh-sites -e SSH_SITES_CONFIG=/full/path/sites.json -- /full/path/to/ssh-sites
 ```
 
-Restart, type `/`, and each site name is listed (description shows server and folder).
+---
 
-## Config options (per server)
+## Config options (per server in `sites.json`)
 
 | Key | Meaning |
 |---|---|
-| `key_file` | SSH private key path (e.g. `~/.ssh/id_ed25519`) |
-| `password` | SSH password (plaintext in `sites.json`) |
-| `password_env` | Name of an env var holding the password |
+| *(none / default)* | **Native Passkey / Touch ID / SSH Agent** (`$SSH_AUTH_SOCK`) |
+| `use_agent` | Explicitly enforce SSH agent / passkey authentication |
+| `key_file` | Path to private key file (e.g. `~/.ssh/id_ed25519`) |
+| `password` | SSH password (plaintext) |
+| `password_env` | Environment variable name holding the password |
 | `readonly` | `true` disables `run_command` and `write_file` |
 | `trust_new_host` | Auto-accept unknown host keys |
 
+---
+
 ## Safety notes
 
-- `run_command` starts in the site folder, but a shell can `cd` elsewhere. For real isolation,
-  use a dedicated limited SSH user per server, not root.
+- `run_command` starts in the site folder, but a shell can `cd` elsewhere. For real isolation, use a dedicated limited SSH user per server, not root.
 - `read_file`, `write_file`, and `list_dir` are strictly confined to the site folder.
 - Keep `sites.json` out of git.
