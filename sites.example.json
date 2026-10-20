@@ -1,0 +1,32 @@
+{
+  "servers": {
+    "main-vps": {
+      "host": "203.0.113.10",
+      "port": 22,
+      "user": "deploy",
+      "key_file": "~/.ssh/id_ed25519",
+      "readonly": false,
+      "trust_new_host": false,
+      "sites": {
+        "optify": "/var/www/optify",
+        "bskypicker": "/var/www/bskypicker",
+        "tikpicker": "/var/www/tikpicker"
+      }
+    },
+    "second-vps": {
+      "host": "198.51.100.7",
+      "port": 22,
+      "user": "ubuntu",
+      "password": "your-password-here",
+      "trust_new_host": true,
+      "sites": { "client-site": "/home/ubuntu/client-site" }
+    },
+    "third-vps": {
+      "host": "198.51.100.8",
+      "port": 22,
+      "user": "ubuntu",
+      "password_env": "THIRD_VPS_PASSWORD",
+      "sites": { "another-site": "/home/ubuntu/another-site" }
+    }
+  }
+}
